@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">CryptoBangsa</title>
+  <desc id="logoDesc">Hexagon cyber shield icon with connected nodes and the CryptoBangsa wordmark</desc>
+  <defs>
+    <linearGradient id="hexGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="55%" stop-color="#e0f2fe" />
+      <stop offset="100%" stop-color="#93c5fd" />
+    </linearGradient>
+    <linearGradient id="accentStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(12 8)">
+    <path d="M40 0 78 22 78 58 40 80 2 58 2 22Z" fill="url(#hexGradient)" opacity="0.95" />
+    <path d="M40 5.8 72.2 24.4v31.2L40 74.2 7.8 55.6V24.4Z" fill="none" stroke="rgba(14,165,233,0.58)" stroke-width="3" stroke-linejoin="round" />
+    <g transform="translate(15 12)">
+      <path d="M24 0a2 2 0 0 1 1 .26l18 10.4A2 2 0 0 1 44 12v20a2 2 0 0 1-1 1.73L25 44.74a2 2 0 0 1-2 0L5 33.73A2 2 0 0 1 4 32V12a2 2 0 0 1 1-1.74L23 .26A2 2 0 0 1 24 0Z" fill="rgba(15,23,42,0.78)" />
+      <path d="M24 10v16" stroke="url(#accentStroke)" stroke-width="4" stroke-linecap="round" />
+      <path d="M12 18h8m18 0h6m-30 14h6m20 0h10" stroke="#bae6fd" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
+      <circle cx="12" cy="18" r="3" fill="#e0f2fe" />
+      <circle cx="38" cy="18" r="3" fill="#a5f3fc" />
+      <circle cx="18" cy="32" r="3" fill="#bae6fd" />
+      <circle cx="46" cy="32" r="3" fill="#f0f9ff" />
+      <circle cx="24" cy="28" r="5" fill="none" stroke="#38bdf8" stroke-width="2.2" opacity="0.9" />
+    </g>
+  </g>
+  <g transform="translate(128 34)">
+    <text font-family="'Poppins','Segoe UI',Arial,sans-serif" font-weight="600" font-size="32" fill="url(#textGradient)" letter-spacing="0.02em">
+      Crypto<tspan font-weight="700">Bangsa</tspan>
+    </text>
+    <text y="28" font-family="'Poppins','Segoe UI',Arial,sans-serif" font-size="14" fill="#94a3b8" letter-spacing="0.12em">
+      SECURE BY DESIGN
+    </text>
+  </g>
+</svg>
