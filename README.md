@@ -4,6 +4,8 @@
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
 ![AES-256-GCM](https://img.shields.io/badge/AES--256--GCM-0F172A?style=for-the-badge)
 
+![CryptoBangsa Logo](assets/cryptobangsa-logo.svg)
+
 > Demo antarmuka modern untuk menampilkan cara enkripsi parameter URL menggunakan AES-256-GCM di PHP.
 
 ## Daftar Isi
@@ -13,8 +15,10 @@
 - [Cara Cepat Menjalankan](#cara-cepat-menjalankan)
 - [Alur Enkripsi](#alur-enkripsi)
 - [Struktur Proyek](#struktur-proyek)
+- [Cuplikan Layar](#cuplikan-layar)
 - [Kustomisasi](#kustomisasi)
 - [Tips Keamanan](#tips-keamanan)
+- [Lisensi](#lisensi)
 - [Tim & Kredit](#tim--kredit)
 
 ## Gambaran Umum
@@ -62,6 +66,15 @@ detail.php
 encryption.php
 ```
 
+## Cuplikan Layar
+![Tampilan Awal](assets/tampilan%20awal.png)
+
+![Daftar Pengguna](assets/daftar%20pengguna.png)
+
+![Demo Enkripsi & Dekripsi](assets/demo.png)
+
+![Langkah Enkripsi](assets/step.png)
+
 ## Kustomisasi
 - Ubah kunci enkripsi AES di `encryption.php` melalui konstanta `ENCRYPTION_KEY` (gunakan 32 byte random).
 - Tambahkan data pengguna baru dengan mengedit array `$users` di `index.php` dan `detail.php` secara paralel.
@@ -72,5 +85,12 @@ encryption.php
 - Terapkan rotasi kunci berkala dan logging yang aman ketika token diverifikasi.
 - Gunakan HTTPS agar token tidak bocor saat transmisi.
 - Validasi semua input sebelum diproses dan batasi masa berlaku token jika diperlukan.
+
+## Lisensi
+Proyek ini dirilis dengan [Lisensi MIT](LICENSE), bebas digunakan, dimodifikasi, dan didistribusikan selama mencantumkan atribusi yang sesuai.
+
+## Tim & Kredit
+- Desain dan copy dummy oleh tim fiktif CryptoBangsa (Linbergh, Skyu, Xzero, Soap, Kyra).
+- Terinspirasi dari praktik terbaik enkripsi URL dan pengalaman UI modern.
 
 Selamat bereksperimen dan kembangkan fitur keamanan Anda bersama CryptoBangsa!
