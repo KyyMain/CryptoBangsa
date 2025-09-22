@@ -21,7 +21,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 $users = [
     [
         'id' => 1007865,
-        'nama' => 'Linbergh Atmaja',
+        'nama' => 'Romi Fajar',
         'email' => 'linbergh@security.net',
         'role' => 'Lead securityy Engineer',
         'location' => 'Jakarta, Indonesia',
@@ -29,7 +29,7 @@ $users = [
     ],
     [
         'id' => 1007872,
-        'nama' => 'Skyu Pratama',
+        'nama' => 'Fajar Rahman',
         'email' => 'skyu@security.net',
         'role' => 'Product Designer',
         'location' => 'Bandung, Indonesia',
@@ -37,7 +37,7 @@ $users = [
     ],
     [
         'id' => 1007831,
-        'nama' => 'Xzero One',
+        'nama' => 'Agus Prayoga',
         'email' => 'xzero.one@security.net',
         'role' => 'AI Researcher',
         'location' => 'Jogja, Indonesia',
@@ -45,7 +45,7 @@ $users = [
     ],
     [
         'id' => 1007847,
-        'nama' => 'John "Soap" Mactavish',
+        'nama' => 'Yoga Setiawan',
         'email' => 'soap.mactavish@security.net',
         'role' => 'Incident Response Specialist',
         'location' => 'Surabaya, Indonesia',
