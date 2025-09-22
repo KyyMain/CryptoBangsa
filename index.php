@@ -41,7 +41,7 @@ $users = [
     [
         'id' => 1007817,
         'nama' => 'Kyra Foster',
-        'email' => 'Kyra@securit.net',
+        'email' => 'Kyra@security.net',
         'role' => 'Cyber Inteligent',
         'location' => 'Tamboen, Indonesia',
         'summary' => 'Bertugas sebagai intelegensi negara demi menajaga keamanan ruang cyber'
