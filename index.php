@@ -1,4 +1,8 @@
 <?php
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 require_once 'encryption.php';
 
 $users = [
@@ -46,17 +50,104 @@ $users = [
 
 $highlight_user = $users[0];
 $plain_url = sprintf('detail.php?id=%d', $highlight_user['id']);
-$highlight_token = encrypt_data($highlight_user['id']);
+$detail_options = [
+    'aad_alias' => 'detail',
+    'context' => [
+        'route' => 'detail.php',
+        'highlight_id' => $highlight_user['id'],
+    ],
+];
+
+$journey_verbose = encrypt_data_verbose($highlight_user['id'], $detail_options);
+
+if ($journey_verbose === false) {
+    $highlight_token = encrypt_data($highlight_user['id'], $detail_options);
+    $journey_verbose = null;
+} else {
+    $highlight_token = $journey_verbose['token'];
+}
+
 $encrypted_url = $highlight_token !== false
     ? 'detail.php?id=' . $highlight_token
     : 'detail.php';
 
+$journey_steps = [];
+
+if ($journey_verbose !== null) {
+    $aad_binding = get_aad_value($journey_verbose['alias']);
+    $pretty_payload = json_encode($journey_verbose['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    $journey_steps = [
+        [
+            'key' => 'plain',
+            'label' => 'Plain',
+            'title' => 'Nilai Asli',
+            'description' => 'ID pengguna sebelum proses kriptografi dimulai.',
+            'content' => (string) $highlight_user['id'],
+            'language' => 'text',
+        ],
+        [
+            'key' => 'payload',
+            'label' => 'Payload',
+            'title' => 'Payload JSON',
+            'description' => 'Nilai dibungkus bersama metadata TTL dan konteks.',
+            'content' => $pretty_payload,
+            'language' => 'json',
+        ],
+        [
+            'key' => 'aad',
+            'label' => 'AAD',
+            'title' => 'Additional Authenticated Data',
+            'description' => 'AAD memastikan token hanya valid di jalur tertentu.',
+            'content' => "Alias: {$journey_verbose['alias']}\nBinding: {$aad_binding}",
+            'language' => 'text',
+        ],
+        [
+            'key' => 'components',
+            'label' => 'IV & Tag',
+            'title' => 'IV • Tag • Ciphertext',
+            'description' => 'Komponen kriptografi yang dihasilkan dari AES-256-GCM.',
+            'content' => "IV (b64): {$journey_verbose['iv_base64']}\nTag (b64): {$journey_verbose['tag_base64']}\nCipher (b64): {$journey_verbose['cipher_base64']}",
+            'language' => 'text',
+        ],
+        [
+            'key' => 'token',
+            'label' => 'Token',
+            'title' => 'Token Final',
+            'description' => 'Setelah Base64URL, token siap dipasang sebagai query string.',
+            'content' => $journey_verbose['token'],
+            'language' => 'text',
+        ],
+    ];
+}
+
+$audit_defaults = [
+    'valid' => 0,
+    'invalid' => 0,
+    'last_failure_reason' => null,
+    'last_failure_at' => null,
+    'last_valid_at' => null,
+];
+
+$audit_snapshot = array_merge($audit_defaults, $_SESSION['audit'] ?? []);
+
+$last_failure_reason = $audit_snapshot['last_failure_reason'] ?? null;
+$last_failure_label = $last_failure_reason ? $last_failure_reason : 'Belum ada kegagalan';
+$last_failure_time_label = isset($audit_snapshot['last_failure_at']) && $audit_snapshot['last_failure_at']
+    ? date('H:i:s', $audit_snapshot['last_failure_at'])
+    : '-';
+$last_valid_time_label = isset($audit_snapshot['last_valid_at']) && $audit_snapshot['last_valid_at']
+    ? date('H:i:s', $audit_snapshot['last_valid_at'])
+    : '-';
+
 $demo_plain_input = '';
 $demo_encrypt_token = null;
 $demo_encrypt_error = null;
+$demo_encrypt_meta = null;
 $demo_token_input = '';
 $demo_decrypt_output = null;
 $demo_decrypt_error = null;
+$demo_decrypt_meta = null;
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $demo_mode = $_POST['demo_mode'] ?? '';
@@ -67,11 +158,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if ($demo_plain_input === '') {
             $demo_encrypt_error = 'Masukkan teks yang ingin dienkripsi.';
         } else {
-            $token = encrypt_data($demo_plain_input);
-            if ($token === false) {
+            $verbose = encrypt_data_verbose($demo_plain_input, [
+                'context' => [
+                    'mode' => 'demo-encrypt',
+                ],
+            ]);
+
+            if ($verbose === false) {
                 $demo_encrypt_error = 'Terjadi kesalahan saat mengenkripsi data.';
             } else {
-                $demo_encrypt_token = $token;
+                $demo_encrypt_token = $verbose['token'];
+                $demo_encrypt_meta = $verbose;
             }
         }
     } elseif ($demo_mode === 'decrypt') {
@@ -80,11 +177,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if ($demo_token_input === '') {
             $demo_decrypt_error = 'Tempel token terenkripsi yang ingin diuji.';
         } else {
-            $plain = decrypt_data($demo_token_input);
-            if ($plain === false) {
-                $demo_decrypt_error = 'Token tidak dapat didekripsi. Pastikan format dan kuncinya sesuai.';
+            $analysis = analyze_token($demo_token_input);
+
+            if ($analysis['status'] !== 'ok') {
+                $demo_decrypt_error = $analysis['error'] ?? 'Token tidak dapat didekripsi. Pastikan format dan kuncinya sesuai.';
             } else {
-                $demo_decrypt_output = $plain;
+                $demo_decrypt_output = $analysis['value'];
+                $demo_decrypt_meta = $analysis['meta'];
             }
         }
     }
@@ -235,6 +334,85 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             font-size: 0.9rem;
         }
 
+        .journey-card {
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 28px 50px rgba(8, 14, 35, 0.65);
+        }
+
+        .journey-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .journey-nav button {
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            background: rgba(56, 189, 248, 0.1);
+            color: #bae6fd;
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.8rem;
+            letter-spacing: 0.05rem;
+            text-transform: uppercase;
+        }
+
+        .journey-nav button.active {
+            background: rgba(56, 189, 248, 0.3);
+            color: #0ea5e9;
+            border-color: rgba(125, 211, 252, 0.6);
+        }
+
+        .journey-step {
+            display: none;
+        }
+
+        .journey-step.active {
+            display: block;
+        }
+
+        .journey-code {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 16px;
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            max-height: 240px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .audit-card {
+            background: rgba(15, 23, 42, 0.68);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 22px 44px rgba(8, 14, 35, 0.55);
+        }
+
+        .audit-metric {
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .countdown-badge {
+            background: rgba(56, 189, 248, 0.18);
+            color: #38bdf8;
+            border-radius: 999px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+            letter-spacing: 0.04rem;
+        }
+
+        .token-utils button {
+            min-width: 160px;
+        }
+
         .text-accent {
             color: var(--accent);
         }
@@ -313,6 +491,30 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                             <code><?= htmlspecialchars($encrypted_url) ?></code>
                         </div>
                     </div>
+                    <?php if (!empty($journey_steps)): ?>
+                        <div class="journey-card mt-4 fade-up" id="tokenJourney">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <p class="text-uppercase small text-info mb-1">Token Journey Visualizer</p>
+                                    <h3 class="h5 fw-semibold mb-0">Jejak Enkripsi Bertahap</h3>
+                                </div>
+                                <div class="journey-nav" role="tablist">
+                                    <?php foreach ($journey_steps as $idx => $step): ?>
+                                        <button type="button" class="btn btn-sm<?= $idx === 0 ? ' active' : '' ?>" data-step="<?= htmlspecialchars($step['key']) ?>">
+                                            <?= htmlspecialchars($step['label']) ?>
+                                        </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php foreach ($journey_steps as $idx => $step): ?>
+                                <div class="journey-step<?= $idx === 0 ? ' active' : '' ?>" data-step-target="<?= htmlspecialchars($step['key']) ?>">
+                                    <h4 class="h6 text-info fw-semibold mb-1"><?= htmlspecialchars($step['title']) ?></h4>
+                                    <p class="small text-light opacity-75 mb-3"><?= htmlspecialchars($step['description']) ?></p>
+                                    <pre class="journey-code" data-language="<?= htmlspecialchars($step['language']) ?>"><?= htmlspecialchars($step['content']) ?></pre>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -334,7 +536,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <div class="row g-4">
                     <?php foreach ($users as $user): ?>
                         <?php
-                        $token = encrypt_data($user['id']);
+                        $token = encrypt_data($user['id'], [
+                            'aad_alias' => 'detail',
+                            'context' => [
+                                'route' => 'detail.php',
+                                'user_id' => $user['id'],
+                            ],
+                        ]);
                         $encrypted_href = $token !== false ? 'detail.php?id=' . $token : '#';
                         ?>
                         <div class="col-12 col-md-6 col-xl-3 fade-up">
@@ -357,6 +565,48 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                             </a>
                         </div>
                     <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+
+        <section id="audit" class="py-5">
+            <div class="container fade-up">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                    <div>
+                        <span class="tag">Security Ops</span>
+                        <h2 class="h3 fw-bold mt-2 mb-0">Audit Dashboard Panel</h2>
+                        <p class="text-light opacity-75 small mb-0">Statistik singkat hasil validasi token dari halaman detail.</p>
+                    </div>
+                    <div class="text-light opacity-75 small">
+                        <i class="bi bi-activity text-info me-2"></i>Pembaruan dihitung per sesi demo ini.
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-12 col-lg-4">
+                        <div class="audit-card h-100 border-success border-opacity-25">
+                            <p class="small text-success text-uppercase mb-2">Token Valid</p>
+                            <p class="audit-metric text-success mb-2"><?= htmlspecialchars((string) $audit_snapshot['valid']) ?></p>
+                            <p class="text-light opacity-75 small mb-0">Jumlah token yang berhasil diverifikasi dan menampilkan data asli.</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <div class="audit-card h-100 border-danger border-opacity-25">
+                            <p class="small text-danger text-uppercase mb-2">Token Gagal</p>
+                            <p class="audit-metric text-danger mb-2"><?= htmlspecialchars((string) $audit_snapshot['invalid']) ?></p>
+                            <p class="text-light opacity-75 small mb-1">Alasan terakhir:</p>
+                            <p class="text-light small mb-0"><?= htmlspecialchars($last_failure_label) ?></p>
+                            <p class="text-light opacity-75 small mb-0">Waktu: <?= htmlspecialchars($last_failure_time_label) ?></p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <div class="audit-card h-100 border-info border-opacity-25">
+                            <p class="small text-info text-uppercase mb-2">Aktivitas Terakhir</p>
+                            <ul class="list-unstyled text-light opacity-75 small mb-0">
+                                <li class="mb-1"><i class="bi bi-clock-history me-2 text-info"></i>Valid terakhir: <?= htmlspecialchars($last_valid_time_label) ?></li>
+                                <li><i class="bi bi-bug me-2 text-warning"></i>Gagal terakhir: <?= htmlspecialchars($last_failure_time_label) ?></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -440,6 +690,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                                 <div class="mt-3">
                                     <label class="form-label text-light small">Token Hasil Enkripsi</label>
                                     <textarea class="form-control bg-transparent text-accent border-secondary" rows="3" readonly><?= htmlspecialchars($demo_encrypt_token) ?></textarea>
+                                    <?php if ($demo_encrypt_meta !== null): ?>
+                                        <?php
+                                        $demo_expires_at = $demo_encrypt_meta['payload']['expires_at'] ?? null;
+                                        $demo_ttl = $demo_expires_at !== null ? max(0, $demo_expires_at - time()) : null;
+                                        ?>
+                                        <p class="text-light opacity-75 small mt-2 mb-0">
+                                            <i class="bi bi-hourglass-split me-2 text-info"></i>Kedaluwarsa dalam <?= htmlspecialchars($demo_ttl !== null ? $demo_ttl . ' detik' : '—') ?>
+                                        </p>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -466,6 +725,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                                 <div class="mt-3">
                                     <label class="form-label text-light small">Hasil Dekripsi</label>
                                     <textarea class="form-control bg-transparent text-accent border-secondary" rows="3" readonly><?= htmlspecialchars($demo_decrypt_output) ?></textarea>
+                                    <?php if ($demo_decrypt_meta !== null): ?>
+                                        <ul class="list-unstyled text-light opacity-75 small mb-0 mt-2">
+                                            <li><i class="bi bi-shield-lock me-2 text-success"></i>Alias AAD: <?= htmlspecialchars($demo_decrypt_meta['alias'] ?? '—') ?></li>
+                                            <li><i class="bi bi-stopwatch me-2 text-warning"></i>Sisa waktu: <?= htmlspecialchars(isset($demo_decrypt_meta['remaining_seconds']) && $demo_decrypt_meta['remaining_seconds'] !== null ? $demo_decrypt_meta['remaining_seconds'] . ' detik' : '—') ?></li>
+                                        </ul>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -531,6 +796,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }, { threshold: 0.15 });
 
         document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+        const journeyEl = document.getElementById('tokenJourney');
+        if (journeyEl) {
+            const buttons = journeyEl.querySelectorAll('.journey-nav button');
+            const steps = journeyEl.querySelectorAll('.journey-step');
+
+            const setActiveStep = (key) => {
+                steps.forEach(step => {
+                    step.classList.toggle('active', step.dataset.stepTarget === key);
+                });
+                buttons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.step === key);
+                });
+            };
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => setActiveStep(btn.dataset.step));
+            });
+        }
     </script>
 </body>
 
