@@ -85,13 +85,38 @@ encryption.php
 ```
 
 ## Cuplikan Layar
-![Tampilan Awal](assets/tampilan%20awal.png)
 
+### Halaman Beranda
+![Halaman Beranda](assets/tampilan%20awal.png)
+Tampilan landing page dengan hero CryptoBangsa, highlight CTA, dan ringkasan fitur enkripsi URL.
+
+### Daftar Pengguna
 ![Daftar Pengguna](assets/daftar%20pengguna.png)
+Grid kartu pengguna fiktif dengan aksi lihat detail yang menginisiasi proses token terenkripsi.
 
-![Demo Enkripsi & Dekripsi](assets/demo.png)
+### Perbandingan URL
+![Perbandingan URL](assets/demo%20url.png)
+Panel demo menampilkan kontras antara parameter ID asli dengan token AES-256-GCM yang aman dibagikan.
 
-![Langkah Enkripsi](assets/step.png)
+### Detail Pengguna
+![Detail Pengguna](assets/detail%20pengguna.png)
+Halaman detail melakukan verifikasi token, menampilkan profil lengkap, dan countdown TTL token.
+
+### Laboratorium Enkripsi
+![Laboratorium Enkripsi](assets/demonstrasi%20enkripsi.png)
+Form interaktif untuk membuat dan mengurai token, memperlihatkan payload JSON, IV, tag, serta metadata AAD.
+
+### Insight Token
+![Insight Token](assets/insight.png)
+Panel insight mem-breakdown data hasil dekripsi agar presenter dapat menjelaskan flow keamanan secara transparan.
+
+### Simulasi Token Rusak
+![Simulasi Token Rusak](assets/simulasi%20token%20rusak.png)
+Fitur serangan terkontrol yang memodifikasi token satu klik untuk menonjolkan deteksi integritas GCM.
+
+### Token Tidak Valid
+![Token Tidak Valid](assets/token%20tidak%20valid.png)
+Tampilan error ramah yang menuntun pengguna untuk menghasilkan ulang token ketika verifikasi gagal.
 
 ## Kustomisasi
 - Ubah kunci enkripsi AES di `encryption.php` melalui konstanta `ENCRYPTION_KEY` (gunakan 32 byte random).
