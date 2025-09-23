@@ -132,10 +132,6 @@ Tampilan error ramah yang menuntun pengguna untuk menghasilkan ulang token ketik
 - Validasi semua input sebelum diproses dan tangani token rusak/diubah sebagai percobaan intrusi.
 
 ## Lisensi
-Proyek ini dirilis dengan [Lisensi MIT](LICENSE), bebas digunakan, dimodifikasi, dan didistribusikan selama mencantumkan atribusi yang sesuai.
-
-## Tim & Kredit
-- Desain dan copy dummy oleh tim fiktif CryptoBangsa (Linbergh, Skyu, Xzero, Soap, Kyra).
-- Terinspirasi dari praktik terbaik enkripsi URL dan pengalaman UI modern.
+Proyek ini dirilis dengan [Lisensi Apache 2.0](LICENSE), bebas digunakan, dimodifikasi, dan didistribusikan selama mencantumkan atribusi yang sesuai.
 
 Selamat bereksperimen dan kembangkan fitur keamanan Anda bersama CryptoBangsa!
